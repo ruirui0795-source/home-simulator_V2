@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資金計画シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Sans:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg: #f5f5f5;
+  --panel: #ffffff;
+  --panel-2: #f8f8f8;
+  --border: #e0e0e0;
+  --border-soft: #ebebeb;
+  --text: #1a1a1a;
+  --text-soft: #555555;
+  --text-mute: #888888;
+  --accent: #1a5fa8;
+  --accent-light: #eef3fb;
+  --accent-line: rgba(26, 95, 168, 0.2);
+  --danger: #c0392b;
+  --ok: #27ae60;
+  --warn: #e67e22;
+  --sans: 'DM Sans', 'Noto Sans JP', sans-serif;
+  --jp-serif: 'Noto Sans JP', sans-serif;
+  --num: 'Barlow Semi Condensed', 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  width: 100%;
+}
+
+body { 
+  min-height: 100vh; 
+  overflow-x: hidden;
+}
+
+.shell {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 28px 32px 120px;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  font-family: var(--num);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.brand-sub {
+  font-family: var(--jp-serif);
+  font-size: 12px;
+  color: var(--text-soft);
+  letter-spacing: 0.1em;
+}
+
+.header-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--jp-serif);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  min-height: 40px;
+  touch-action: manipulation;
+}
+
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover { background: #154a85; color: #fff; }
+
+.btn-icon {
+  padding: 10px 12px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* CUSTOMER BAR */
+.customer-bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cust-label {
+  font-family: var(--jp-serif);
+  font-size: 11px;
+  color: var(--text-mute);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+.cust-name-input {
+  border: none !important;
+  border-bottom: 2px solid var(--border) !important;
+  background: transparent;
+  padding: 6px 4px !important;
+  font-family: var(--jp-serif) !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  min-width: 160px;
+  flex: 1;
+  outline: none;
+  max-width: 320px;
+}
+
+.cust-name-input:focus { border-bottom-color: var(--accent) !important; }
+
+.cust-select {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  padding: 8px 12px;
+  font-family: var(--jp-serif);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  min-height: 40px;
+  min-width: 160px;
+}
+
+.auto-save-indicator {
+  font-family: var(--jp-serif);
+  font-size: 11px;
+  color: var(--ok);
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auto-save-indicator.show { opacity: 1; }
+
+.auto-save-indicator::before {
+  content: '●';
+  color: var(--ok);
+  font-size: 8px;
+}
+
+/* LAYOUT */
+.grid {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+  .shell { padding: 16px; padding-bottom: 100px; }
+}
+
+.input-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .input-panel { position: static; max-height: none; overflow-y: visible; }
+}
+
+.input-panel::-webkit-scrollbar { width: 6px; }
+.input-panel::-webkit-scrollbar-track { background: transparent; }
+.input-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.section-num {
+  font-family: var(--num);
+  font-size: 15px;
+  color: var(--accent);
+  font-weight: 700;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-family: var(--jp-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+
+.section-collapse {
+  font-size: 12px;
+  color: var(--text-mute);
+  transition: transform 0.2s;
+}
+
+.section.collapsed .section-collapse { transform: rotate(-90deg); }
+.section.collapsed .section-body { display: none; }
+
+.field { margin-bottom: 16px; }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-family: var(--jp-serif);
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+input[type="number"], input[type="text"] {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  padding: 8px 0;
+  font-family: var(--num);
+  font-size: 22px;
+  font-weight: 700;
+  transition: border 0.15s;
+  min-height: 40px;
+}
+
+input[type="number"]:focus, input[type="text"]:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+.unit {
+  font-size: 12px;
+  color: var(--text-mute);
+  font-weight: 500;
+  padding-bottom: 8px;
+  white-space: nowrap;
+  font-family: var(--jp-serif);
+}
+
+.toggle-group {
+  display: flex;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: var(--panel-2);
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-soft);
+  font-family: var(--jp-serif);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.toggle-btn:last-child { border-right: none; }
+
+.toggle-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.toggle-btn:active { transform: scale(0.97); }
+
+.check-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.15s;
+  min-height: 48px;
+  touch-action: manipulation;
+}
+
+.check-wrap:hover { border-color: var(--accent); background: var(--accent-light); }
+.check-wrap input { display: none; }
+
+.check-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.check-wrap input:checked + .check-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.check-wrap input:checked + .check-box::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0px;
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+
+.check-label {
+  font-family: var(--jp-serif);
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.range-wrap { margin-top: 14px; }
+
+.range-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.range-label {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-family: var(--jp-serif);
+}
+
+.range-value {
+  font-family: var(--num);
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  outline: none;
+  border-radius: 2px;
+  touch-action: manipulation;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.quick-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.quick-btn {
+  padding: 10px 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--num);
+  transition: all 0.15s;
+  min-height: 38px;
+  touch-action: manipulation;
+}
+
+.quick-btn:hover, .quick-btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.pair-section {
+  display: none;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  margin-top: 16px;
+}
+
+.pair-section.active { display: block; }
+
+.person-label {
+  font-family: var(--num);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.person-label::before {
+  content: '';
+  width: 16px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.pair-ratio {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin: 12px 0;
+  background: var(--accent-light);
+  padding: 12px;
+  border: 1px solid var(--accent-line);
+}
+
+.ratio-item { text-align: center; }
+
+.ratio-label {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-bottom: 4px;
+  font-family: var(--jp-serif);
+}
+
+.ratio-value {
+  font-family: var(--num);
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.capacity-card {
+  background: var(--accent-light);
+  border: 1px solid var(--accent-line);
+  padding: 16px 18px;
+  margin-top: 16px;
+}
+
+.capacity-label {
+  font-size: 11px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+}
+
+.capacity-value {
+  font-family: var(--num);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.capacity-unit {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-left: 4px;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+}
+
+.capacity-note {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 6px;
+  font-family: var(--jp-serif);
+}
+
+.warning {
+  background: #fff4e6;
+  border-left: 3px solid var(--warn);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #a05d0f;
+  margin-top: 10px;
+  font-family: var(--jp-serif);
+  line-height: 1.6;
+}
+
+.warning.danger {
+  background: #fde8e6;
+  border-left-color: var(--danger);
+  color: var(--danger);
+}
+
+/* RESULT */
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hero-result {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  padding: 36px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .hero-result { padding: 24px 20px; }
+}
+
+.hero-result::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(26,95,168,0.05), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-label {
+  font-family: var(--num);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hero-sub {
+  font-family: var(--jp-serif);
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-bottom: 20px;
+}
+
+.hero-number-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-number {
+  font-family: var(--num);
+  font-size: 72px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .hero-number { font-size: 52px; }
+}
+
+.hero-unit {
+  font-family: var(--jp-serif);
+  font-size: 18px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.hero-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .hero-breakdown { grid-template-columns: 1fr; }
+}
+
+.hero-break-item {
+  background: var(--accent-light);
+  padding: 14px 16px;
+}
+
+.break-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 4px;
+  font-family: var(--num);
+  font-weight: 600;
+}
+
+.break-value {
+  font-family: var(--num);
+  font-size: 20px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.pair-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+@media (max-width: 640px) {
+  .pair-breakdown { grid-template-columns: 1fr; }
+}
+
+.pair-card {
+  background: var(--accent-light);
+  padding: 16px;
+  border: 1px solid var(--accent-line);
+}
+
+.pair-name {
+  font-family: var(--num);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.pair-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 12px;
+  font-family: var(--jp-serif);
+}
+
+.pair-detail-label { color: var(--text-mute); }
+
+.pair-detail-value {
+  color: var(--text);
+  font-family: var(--num);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+}
+
+.kpi-card {
+  background: var(--panel);
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 3px;
+  background: var(--accent);
+}
+
+.kpi-label {
+  font-family: var(--jp-serif);
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-family: var(--num);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.kpi-unit {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-left: 3px;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 6px;
+  font-family: var(--jp-serif);
+}
+
+.detail-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  padding: 28px 32px;
+}
+
+@media (max-width: 640px) { .detail-section { padding: 20px; } }
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-title {
+  font-family: var(--num);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.detail-title-jp {
+  font-family: var(--jp-serif);
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+
+.reset-cost-btn {
+  font-size: 11px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-line);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: var(--jp-serif);
+  transition: all 0.15s;
+  touch-action: manipulation;
+}
+
+.reset-cost-btn:hover { background: var(--accent-light); }
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 40px;
+}
+
+@media (max-width: 900px) { .cost-grid { grid-template-columns: 1fr; } }
+
+.cost-group { padding: 12px 0; }
+
+.cost-group-title {
+  font-family: var(--jp-serif);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-line);
+}
+
+.cost-group-num {
+  font-family: var(--num);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-family: var(--jp-serif);
+  font-size: 13px;
+  border-bottom: 1px dashed var(--border-soft);
+  gap: 8px;
+}
+
+.cost-item:last-child { border-bottom: none; }
+
+.cost-item-label {
+  color: var(--text-soft);
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.cost-item-label small {
+  font-size: 10px;
+  color: var(--text-mute);
+  display: block;
+  margin-top: 1px;
+}
+
+.cost-input-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.cost-input {
+  width: 120px !important;
+  font-family: var(--num) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  padding: 4px 2px !important;
+  border: none !important;
+  border-bottom: 1.5px solid var(--border) !important;
+  text-align: right;
+  color: var(--text) !important;
+  min-height: 28px !important;
+}
+
+.cost-input:focus { border-bottom-color: var(--accent) !important; }
+
+.cost-input[data-edited] {
+  border-bottom-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+}
+
+.cost-unit {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-family: var(--jp-serif);
+}
+
+.totals-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  padding: 2px;
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) { .totals-bar { grid-template-columns: 1fr; } }
+
+.total-cell {
+  background: var(--accent-light);
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.total-cell.primary { background: var(--accent); color: #fff; }
+
+.total-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+}
+
+.total-cell.primary .total-label { color: rgba(255,255,255,0.85); }
+
+.total-value {
+  font-family: var(--num);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.total-cell.primary .total-value { color: #fff; }
+
+.total-unit {
+  font-size: 12px;
+  margin-left: 2px;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+}
+
+.memo-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+
+.memo-section textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-family: var(--jp-serif);
+  font-size: 13px;
+  resize: vertical;
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.memo-section textarea:focus { outline: none; border-color: var(--accent); }
+
+.disclaimer {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  font-family: var(--jp-serif);
+}
+
+.disclaimer-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-family: var(--num);
+  font-weight: 700;
+}
+
+.disclaimer-text {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--text-mute);
+}
+
+.prop-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.prop-card {
+  background: var(--panel-2);
+  border: 1.5px solid var(--border);
+  padding: 14px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  touch-action: manipulation;
+}
+
+.prop-card.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.prop-card:hover:not(.active) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.prop-icon { font-size: 22px; display: block; }
+
+.prop-name {
+  font-family: var(--jp-serif);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.prop-card.active .prop-name { font-weight: 700; }
+
+.debt-toggle {
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  font-family: var(--jp-serif);
+  font-weight: 500;
+  padding: 6px 0;
+  touch-action: manipulation;
+}
+
+.debt-toggle:hover { text-decoration: underline; }
+
+.debt-list {
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+
+.debt-list.open { display: block; }
+
+.debt-row {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.debt-row:last-child { margin-bottom: 0; }
+
+.debt-label {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-family: var(--jp-serif);
+}
+
+.debt-row input { font-size: 14px !important; padding: 4px 0 !important; min-height: 32px !important; }
+
+/* MOBILE TAB BAR */
+.mobile-tabs {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.mobile-tab {
+  flex: 1;
+  padding: 12px 4px;
+  background: transparent;
+  border: none;
+  font-family: var(--jp-serif);
+  font-size: 11px;
+  color: var(--text-mute);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 60px;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.mobile-tab.active { color: var(--accent); font-weight: 700; }
+
+.mobile-tab-icon { font-size: 18px; }
+
+@media (max-width: 1100px) {
+  .mobile-tabs { display: flex; }
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 28px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-title {
+  font-family: var(--num);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.record-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.record-item:hover { border-color: var(--accent); background: var(--accent-light); }
+
+.record-name {
+  font-family: var(--jp-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.record-meta {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-family: var(--jp-serif);
+}
+
+.record-del {
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s;
+  touch-action: manipulation;
+}
+
+.record-del:hover { color: var(--danger); }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-number, .kpi-value, .capacity-value {
+  animation: fadeUp 0.3s ease-out;
+}
+
+/* Mobile view switching */
+@media (max-width: 1100px) {
+  body.view-input .result-panel { display: none; }
+  body.view-result .input-panel { display: none; }
+}
+</style>
+</head>
+<body class="view-input">
+
+<div class="shell" id="captureTarget">
+
+  <div class="header">
+    <div class="brand">
+      <div class="brand-mark">Capital Plan</div>
+      <div class="brand-sub">資金計画シミュレーション</div>
+    </div>
+    <div class="header-meta">
+      <button class="btn btn-icon" onclick="openRecords()" title="保存した記録">📂</button>
+      <button class="btn btn-icon" onclick="saveAsNew()" title="新規保存">💾</button>
+      <button class="btn" onclick="captureImage(event)">画像保存</button>
+    </div>
+  </div>
+
+  <div class="customer-bar">
+    <div class="cust-label">顧客名</div>
+    <input type="text" class="cust-name-input" id="custName" placeholder="（未入力）" oninput="autoSave()">
+    <select class="cust-select" id="recordSelect" onchange="switchRecord()">
+      <option value="">— 新規作成 —</option>
+    </select>
+    <div class="auto-save-indicator" id="saveIndicator">自動保存</div>
+  </div>
+
+  <div class="grid">
+
+    <div class="input-panel">
+
+      <div class="section" id="sec1">
+        <div class="section-head" onclick="toggleSection('sec1')">
+          <span class="section-num">01</span>
+          <span class="section-title">お客様情報</span>
+          <span class="section-collapse">▼</span>
+        </div>
+        <div class="section-body">
+
+        <label class="check-wrap">
+          <input type="checkbox" id="usePair" onchange="togglePair();autoSave()">
+          <span class="check-box"></span>
+          <span class="check-label">ペアローン / 連帯債務（収入合算）</span>
+        </label>
+
+        <div class="person-label">主債務者</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="label">年齢</label>
+            <div class="input-wrap">
+              <input type="number" id="age1" value="35" oninput="calc()">
+              <span class="unit">歳</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">年収</label>
+            <div class="input-wrap">
+              <input type="number" id="income1" value="500" oninput="calc()">
+              <span class="unit">万円</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="debt-toggle" onclick="this.nextElementSibling.classList.toggle('open')">
+          ＋ 現在の借入（月々返済額）
+        </div>
+        <div class="debt-list">
+          <div class="debt-row"><span class="debt-label">車のローン</span><div class="input-wrap"><input type="number" id="car1" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+          <div class="debt-row"><span class="debt-label">カードローン</span><div class="input-wrap"><input type="number" id="card1" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+          <div class="debt-row"><span class="debt-label">ショッピング</span><div class="input-wrap"><input type="number" id="shop1" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+          <div class="debt-row"><span class="debt-label">リボ払い</span><div class="input-wrap"><input type="number" id="revo1" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+          <div class="debt-row"><span class="debt-label">その他</span><div class="input-wrap"><input type="number" id="other1" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+        </div>
+
+        <div class="pair-section" id="pairSection">
+          <div class="person-label">連帯債務者</div>
+          <div class="field-row">
+            <div class="field">
+              <label class="label">年齢</label>
+              <div class="input-wrap">
+                <input type="number" id="age2" value="33" oninput="calc()">
+                <span class="unit">歳</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">年収</label>
+              <div class="input-wrap">
+                <input type="number" id="income2" value="400" oninput="calc()">
+                <span class="unit">万円</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="debt-toggle" onclick="this.nextElementSibling.classList.toggle('open')">
+            ＋ 現在の借入（月々返済額）
+          </div>
+          <div class="debt-list">
+            <div class="debt-row"><span class="debt-label">車のローン</span><div class="input-wrap"><input type="number" id="car2" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+            <div class="debt-row"><span class="debt-label">カードローン</span><div class="input-wrap"><input type="number" id="card2" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+            <div class="debt-row"><span class="debt-label">ショッピング</span><div class="input-wrap"><input type="number" id="shop2" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+            <div class="debt-row"><span class="debt-label">リボ払い</span><div class="input-wrap"><input type="number" id="revo2" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+            <div class="debt-row"><span class="debt-label">その他</span><div class="input-wrap"><input type="number" id="other2" value="0" oninput="calc()"><span class="unit">円</span></div></div>
+          </div>
+
+          <div class="field" style="margin-top:14px;">
+            <label class="label">借入割合</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-split="income" onclick="setSplit('income')">年収比</button>
+              <button class="toggle-btn" data-split="half" onclick="setSplit('half')">50:50</button>
+              <button class="toggle-btn" data-split="manual" onclick="setSplit('manual')">個別指定</button>
+            </div>
+          </div>
+
+          <div class="pair-ratio">
+            <div class="ratio-item">
+              <div class="ratio-label">主債務者</div>
+              <div class="ratio-value" id="ratio1">—</div>
+            </div>
+            <div class="ratio-item">
+              <div class="ratio-label">連帯者</div>
+              <div class="ratio-value" id="ratio2">—</div>
+            </div>
+          </div>
+
+          <div id="manualSplit" style="display:none;">
+            <div class="field-row">
+              <div class="field">
+                <label class="label">主債務者 借入</label>
+                <div class="input-wrap">
+                  <input type="number" id="loan1" value="0" oninput="calc()">
+                  <span class="unit">万円</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">連帯者 借入</label>
+                <div class="input-wrap">
+                  <input type="number" id="loan2" value="0" oninput="calc()">
+                  <span class="unit">万円</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+      <div class="section" id="sec2">
+        <div class="section-head" onclick="toggleSection('sec2')">
+          <span class="section-num">02</span>
+          <span class="section-title">返済条件</span>
+          <span class="section-collapse">▼</span>
+        </div>
+        <div class="section-body">
+
+        <div class="field">
+          <label class="label">返済期間</label>
+          <div class="input-wrap">
+            <input type="number" id="years" value="35" oninput="calc()">
+            <span class="unit">年</span>
+          </div>
+          <div id="ageWarning"></div>
+        </div>
+
+        <div class="range-wrap">
+          <div class="range-label-row">
+            <span class="range-label">審査金利</span>
+            <span class="range-value" id="reviewRateLabel">3.0%</span>
+          </div>
+          <input type="range" id="reviewRate" min="1.5" max="4.0" step="0.1" value="3.0" oninput="calc()">
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label class="label">返済比率</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" data-ratio="25" onclick="setRatio(25)">25%</button>
+            <button class="toggle-btn active" data-ratio="30" onclick="setRatio(30)">30%</button>
+            <button class="toggle-btn" data-ratio="35" onclick="setRatio(35)">35%</button>
+            <button class="toggle-btn" data-ratio="40" onclick="setRatio(40)">40%</button>
+          </div>
+        </div>
+
+        <div class="capacity-card">
+          <div class="capacity-label">借入可能総額の目安</div>
+          <div class="capacity-value"><span id="capacity">0</span><span class="capacity-unit">万円</span></div>
+          <div class="capacity-note">年収の10倍を上限／借入状況・期間を反映</div>
+        </div>
+
+        </div>
+      </div>
+
+      <div class="section" id="sec3">
+        <div class="section-head" onclick="toggleSection('sec3')">
+          <span class="section-num">03</span>
+          <span class="section-title">物件情報</span>
+          <span class="section-collapse">▼</span>
+        </div>
+        <div class="section-body">
+
+        <div class="field">
+          <label class="label">物件の種類</label>
+          <div class="prop-selector">
+            <div class="prop-card active" data-type="house" onclick="setPropType('house')">
+              <span class="prop-icon">🏠</span>
+              <span class="prop-name">戸建</span>
+            </div>
+            <div class="prop-card" data-type="mansion" onclick="setPropType('mansion')">
+              <span class="prop-icon">🏢</span>
+              <span class="prop-name">マンション</span>
+            </div>
+            <div class="prop-card" data-type="custom" onclick="setPropType('custom')">
+              <span class="prop-icon">🏗️</span>
+              <span class="prop-name">注文住宅</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">物件の状態</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" data-cond="used" onclick="setCondition('used')">中古</button>
+            <button class="toggle-btn active" data-cond="new" onclick="setCondition('new')">新築</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">物件価格</label>
+          <div class="input-wrap">
+            <input type="number" id="price" value="4500" oninput="calc()">
+            <span class="unit">万円</span>
+          </div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="adjust('price',-100)">−100</button>
+            <button class="quick-btn" onclick="adjust('price',-10)">−10</button>
+            <button class="quick-btn" onclick="adjust('price',10)">+10</button>
+            <button class="quick-btn" onclick="adjust('price',100)">+100</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">借入額 <span style="font-size:10px;color:var(--text-mute);">※物件価格×8.5%自動</span></label>
+          <div class="input-wrap">
+            <input type="number" id="loan" value="4883" oninput="calc()">
+            <span class="unit">万円</span>
+          </div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="adjust('loan',-100)">−100</button>
+            <button class="quick-btn" onclick="adjust('loan',-10)">−10</button>
+            <button class="quick-btn" onclick="adjust('loan',10)">+10</button>
+            <button class="quick-btn" onclick="adjust('loan',100)">+100</button>
+          </div>
+          <div id="loanWarning"></div>
+        </div>
+
+        <div class="range-wrap">
+          <div class="range-label-row">
+            <span class="range-label">実行金利</span>
+            <span class="range-value" id="realRateLabel">0.50%</span>
+          </div>
+          <input type="range" id="realRate" min="0.1" max="3.0" step="0.05" value="0.5" oninput="calc()">
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label class="label">ボーナス月加算</label>
+          <div class="input-wrap">
+            <input type="number" id="bonus" value="0" oninput="calc()">
+            <span class="unit">万円</span>
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+      <div class="section" id="sec4">
+        <div class="section-head" onclick="toggleSection('sec4')">
+          <span class="section-num">04</span>
+          <span class="section-title">月々の維持費</span>
+          <span class="section-collapse">▼</span>
+        </div>
+        <div class="section-body">
+
+        <div class="field">
+          <label class="label">管理費</label>
+          <div class="input-wrap">
+            <input type="number" id="kanri" value="0" oninput="calc()">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">修繕積立金</label>
+          <div class="input-wrap">
+            <input type="number" id="shuzen" value="0" oninput="calc()">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">駐車場代</label>
+          <div class="input-wrap">
+            <input type="number" id="parking" value="0" oninput="calc()">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">リフォーム / OP</label>
+          <div class="input-wrap">
+            <input type="number" id="reform" value="0" oninput="calc()">
+            <span class="unit">万円</span>
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="result-panel">
+
+      <div class="hero-result">
+        <div class="hero-label">Monthly Payment</div>
+        <div class="hero-sub">月々の総支払額（ローン＋維持費）</div>
+        <div class="hero-number-row">
+          <div class="hero-number" id="monthlyTotal">0</div>
+          <div class="hero-unit">円 / 月</div>
+        </div>
+
+        <div class="hero-breakdown">
+          <div class="hero-break-item">
+            <div class="break-label">元本</div>
+            <div class="break-value" id="monthlyPrincipal">0円</div>
+          </div>
+          <div class="hero-break-item">
+            <div class="break-label">利息（初回）</div>
+            <div class="break-value" id="monthlyInterest">0円</div>
+          </div>
+          <div class="hero-break-item">
+            <div class="break-label">維持費</div>
+            <div class="break-value" id="monthlyMaint">0円</div>
+          </div>
+        </div>
+
+        <div class="pair-breakdown" id="pairBreakdown" style="display:none;">
+          <div class="pair-card">
+            <div class="pair-name">主債務者</div>
+            <div class="pair-detail"><span class="pair-detail-label">借入額</span><span class="pair-detail-value" id="pb1loan">—</span></div>
+            <div class="pair-detail"><span class="pair-detail-label">月々返済</span><span class="pair-detail-value" id="pb1monthly">—</span></div>
+            <div class="pair-detail"><span class="pair-detail-label">総返済額</span><span class="pair-detail-value" id="pb1total">—</span></div>
+          </div>
+          <div class="pair-card">
+            <div class="pair-name">連帯者</div>
+            <div class="pair-detail"><span class="pair-detail-label">借入額</span><span class="pair-detail-value" id="pb2loan">—</span></div>
+            <div class="pair-detail"><span class="pair-detail-label">月々返済</span><span class="pair-detail-value" id="pb2monthly">—</span></div>
+            <div class="pair-detail"><span class="pair-detail-label">総返済額</span><span class="pair-detail-value" id="pb2total">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">総返済額</div>
+          <div class="kpi-value"><span id="totalPayment">0</span><span class="kpi-unit">万円</span></div>
+          <div class="kpi-sub" id="totalInterestSub">うち利息 0万円</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">物件総額</div>
+          <div class="kpi-value"><span id="propTotal">0</span><span class="kpi-unit">万円</span></div>
+          <div class="kpi-sub">本体＋諸費用</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">現金手出</div>
+          <div class="kpi-value"><span id="cashOut">0</span><span class="kpi-unit">万円</span></div>
+          <div class="kpi-sub">自己資金目安</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">年間支払</div>
+          <div class="kpi-value"><span id="annualTotal">0</span><span class="kpi-unit">円</span></div>
+          <div class="kpi-sub">ボーナス込</div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-head">
+          <div>
+            <div class="detail-title">Cost Breakdown</div>
+            <div class="detail-title-jp">諸費用内訳（タップで編集可）</div>
+          </div>
+          <button class="reset-cost-btn" onclick="resetCostInputs()">自動計算に戻す</button>
+        </div>
+
+        <div class="cost-grid">
+          <div class="cost-group">
+            <div class="cost-group-title">
+              <span class="cost-group-num">01</span>
+              契約・物件関連
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">仲介手数料<br><small>3%＋6万円×1.1</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_chukai" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">売買契約 印紙代<br><small>軽減税率適用</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_inshi1" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">建物請負 印紙代<br><small>注文住宅のみ</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_inshi2" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">管理費清算金</span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_kanri_sei" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">修繕積立清算金</span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_shuzen_sei" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+          </div>
+
+          <div class="cost-group">
+            <div class="cost-group-title">
+              <span class="cost-group-num">02</span>
+              ローン・保険
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">銀行事務手数料<br><small>借入額×2.2%</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_bank" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">火災保険料<br><small>5年一括／地震別途</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_fire" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+          </div>
+
+          <div class="cost-group">
+            <div class="cost-group-title">
+              <span class="cost-group-num">03</span>
+              登記・税金
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">登記費用<br><small>登録免許税＋司法書士</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_touki" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">表示登記費用<br><small>新築のみ 110,000円固定</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_hyouji" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">修繕積立基金<br><small>新築マンション</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_kikin" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">固定資産税清算金<br><small>物件価格×0.3%目安</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_kotei" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">振込手数料</span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_furikomi" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">不動産取得税<br><small>引渡後別途／軽減後概算</small></span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_shutoku" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+          </div>
+
+          <div class="cost-group">
+            <div class="cost-group-title">
+              <span class="cost-group-num">04</span>
+              オプション工事
+            </div>
+            <div class="cost-item">
+              <span class="cost-item-label">リフォーム / OP</span>
+              <div class="cost-input-wrap"><input type="number" class="cost-input" id="ci_reform_yen" oninput="markEdited(this);calc()"><span class="cost-unit">円</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="totals-bar">
+          <div class="total-cell">
+            <div class="total-label">物件購入総額</div>
+            <div class="total-value"><span id="t_total">0</span><span class="total-unit">万円</span></div>
+          </div>
+          <div class="total-cell primary">
+            <div class="total-label">借入総額</div>
+            <div class="total-value"><span id="t_loan">0</span><span class="total-unit">万円</span></div>
+          </div>
+          <div class="total-cell">
+            <div class="total-label">現金手出</div>
+            <div class="total-value"><span id="t_cash">0</span><span class="total-unit">万円</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="memo-section">
+        <div class="cust-label" style="margin-bottom:8px;">商談メモ</div>
+        <textarea id="memo" placeholder="顧客要望・注意事項などを記録..." oninput="autoSave()"></textarea>
+      </div>
+
+      <div class="disclaimer">
+        <div class="disclaimer-title">Notice</div>
+        <div class="disclaimer-text">
+          本シミュレーションの結果および各費用はあくまで概算の目安です。実際の借入可能額・金利・手数料は金融機関の審査結果や物件条件により変動します。最終確認は担当者までお問い合わせください
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="mobile-tabs">
+  <button class="mobile-tab active" data-view="input" onclick="switchView('input')">
+    <span class="mobile-tab-icon">✏️</span>
+    <span>入力</span>
+  </button>
+  <button class="mobile-tab" data-view="result" onclick="switchView('result')">
+    <span class="mobile-tab-icon">📊</span>
+    <span>結果</span>
+  </button>
+  <button class="mobile-tab" onclick="openRecords()">
+    <span class="mobile-tab-icon">📂</span>
+    <span>記録</span>
+  </button>
+  <button class="mobile-tab" onclick="captureImage(event)">
+    <span class="mobile-tab-icon">📸</span>
+    <span>保存</span>
+  </button>
+</div>
+
+<div class="modal-overlay" id="recordsModal" onclick="if(event.target===this)closeRecords()">
+  <div class="modal">
+    <div class="modal-title">📂 保存した記録</div>
+    <div class="record-list" id="recordList"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeRecords()">閉じる</button>
+      <button class="btn btn-primary" onclick="saveAsNew();closeRecords();">現在の内容を新規保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  propType: 'house',
+  condition: 'new',
+  payRatio: 30,
+  usePair: false,
+  splitMode: 'income',
+  _lastPrice: null,
+  _loanManuallySet: false,
+  currentRecordId: null,
+  _booting: true,
+};
+
+const STORAGE_KEY = 'capitalplan_records_v1';
+const CURRENT_KEY = 'capitalplan_current_v1';
+
+function setPropType(t) {
+  state.propType = t;
+  document.querySelectorAll('.prop-card').forEach(el => el.classList.toggle('active', el.dataset.type === t));
+  calc();
+}
+
+function setCondition(c) {
+  state.condition = c;
+  document.querySelectorAll('[data-cond]').forEach(el => el.classList.toggle('active', el.dataset.cond === c));
+  calc();
+}
+
+function setRatio(r) {
+  state.payRatio = r;
+  document.querySelectorAll('[data-ratio]').forEach(el => el.classList.toggle('active', parseInt(el.dataset.ratio) === r));
+  calc();
+}
+
+function setSplit(m) {
+  state.splitMode = m;
+  document.querySelectorAll('[data-split]').forEach(el => el.classList.toggle('active', el.dataset.split === m));
+  document.getElementById('manualSplit').style.display = (m === 'manual') ? 'block' : 'none';
+  calc();
+}
+
+function togglePair() {
+  state.usePair = document.getElementById('usePair').checked;
+  document.getElementById('pairSection').classList.toggle('active', state.usePair);
+  document.getElementById('pairBreakdown').style.display = state.usePair ? 'grid' : 'none';
+  calc();
+}
+
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+function adjust(id, delta) {
+  const el = document.getElementById(id);
+  el.value = Math.max(0, (parseInt(el.value)||0) + delta);
+  if (id === 'loan') state._loanManuallySet = true;
+  calc();
+}
+
+function switchView(v) {
+  document.body.classList.remove('view-input', 'view-result');
+  document.body.classList.add('view-' + v);
+  document.querySelectorAll('.mobile-tab[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function markEdited(el) { el.dataset.edited = '1'; }
+
+function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function calc() {
+  document.getElementById('reviewRateLabel').textContent = val('reviewRate').toFixed(1) + '%';
+  document.getElementById('realRateLabel').textContent = val('realRate').toFixed(2) + '%';
+
+  const reviewRate = val('reviewRate') / 100 / 12;
+  const years = val('years');
+  const n = years * 12;
+
+  const age1 = val('age1');
+  const income1 = val('income1');
+  const age2 = val('age2');
+  const income2 = val('income2');
+  const totalIncome = state.usePair ? (income1 + income2) : income1;
+
+  const debt1 = val('car1') + val('card1') + val('shop1') + val('revo1') + val('other1');
+  const debt2 = state.usePair ? (val('car2') + val('card2') + val('shop2') + val('revo2') + val('other2')) : 0;
+  const totalDebt = debt1 + debt2;
+
+  const annualCap = totalIncome * 10000 * (state.payRatio / 100) - totalDebt * 12;
+  const monthlyCap = Math.max(0, annualCap / 12);
+
+  let capacity = 0;
+  if (reviewRate > 0 && n > 0) {
+    capacity = monthlyCap * (1 - Math.pow(1 + reviewRate, -n)) / reviewRate;
+  }
+  const capacityLimit = totalIncome * 10 * 10000;
+  capacity = Math.min(capacity, capacityLimit);
+
+  document.getElementById('capacity').textContent = Math.round(capacity / 10000).toLocaleString();
+
+  const ageWarn = document.getElementById('ageWarning');
+  const maxAge = Math.max(age1, state.usePair ? age2 : 0);
+  if (maxAge + years > 79) {
+    ageWarn.innerHTML = '<div class="warning">完済時年齢が79歳超</div>';
+  } else {
+    ageWarn.innerHTML = '';
+  }
+
+  let ratio1 = 1, ratio2 = 0;
+  if (state.usePair) {
+    if (state.splitMode === 'income') {
+      const sum = income1 + income2;
+      ratio1 = sum > 0 ? income1 / sum : 0.5;
+      ratio2 = sum > 0 ? income2 / sum : 0.5;
+    } else if (state.splitMode === 'half') {
+      ratio1 = 0.5; ratio2 = 0.5;
+    } else {
+      const l1 = val('loan1'); const l2 = val('loan2');
+      const sum = l1 + l2;
+      ratio1 = sum > 0 ? l1 / sum : 0.5;
+      ratio2 = sum > 0 ? l2 / sum : 0.5;
+    }
+    document.getElementById('ratio1').textContent = Math.round(ratio1 * 100) + '%';
+    document.getElementById('ratio2').textContent = Math.round(ratio2 * 100) + '%';
+  } else {
+    document.getElementById('ratio1').textContent = '—';
+    document.getElementById('ratio2').textContent = '—';
+  }
+
+  const realRate = val('realRate') / 100 / 12;
+  const loanMan = val('loan');
+  const loanYen = loanMan * 10000;
+  const bonusMan = val('bonus');
+  const bonusYen = bonusMan * 10000;
+
+  const bonusTotal = bonusYen * 2 * years;
+  const principalForMonthly = Math.max(0, loanYen - bonusTotal);
+
+  let monthlyPay = 0;
+  let totalPay = 0;
+  let firstInterest = 0;
+  if (realRate > 0 && principalForMonthly > 0) {
+    monthlyPay = principalForMonthly * realRate * Math.pow(1 + realRate, n) / (Math.pow(1 + realRate, n) - 1);
+    firstInterest = principalForMonthly * realRate;
+  } else if (principalForMonthly > 0) {
+    monthlyPay = principalForMonthly / n;
+  }
+
+  let bonusMonthlyPay = 0;
+  if (realRate > 0 && bonusTotal > 0) {
+    const br = realRate * 6;
+    const bn = years * 2;
+    bonusMonthlyPay = bonusTotal * br * Math.pow(1+br, bn) / (Math.pow(1+br, bn) - 1);
+  } else if (bonusTotal > 0) {
+    bonusMonthlyPay = bonusTotal / (years * 2);
+  }
+
+  totalPay = monthlyPay * n + bonusMonthlyPay * years * 2;
+  const totalInterest = totalPay - loanYen;
+
+  const maint = val('kanri') + val('shuzen') + val('parking');
+  const monthlyTotal = monthlyPay + maint;
+  const annualTotal = monthlyPay * 12 + bonusMonthlyPay * 2 + maint * 12;
+
+  document.getElementById('monthlyTotal').textContent = Math.round(monthlyTotal).toLocaleString();
+  document.getElementById('monthlyPrincipal').textContent = Math.round(monthlyPay - firstInterest).toLocaleString() + '円';
+  document.getElementById('monthlyInterest').textContent = Math.round(firstInterest).toLocaleString() + '円';
+  document.getElementById('monthlyMaint').textContent = Math.round(maint).toLocaleString() + '円';
+  document.getElementById('annualTotal').textContent = Math.round(annualTotal).toLocaleString();
+  document.getElementById('totalPayment').textContent = Math.round(totalPay / 10000).toLocaleString();
+  document.getElementById('totalInterestSub').textContent = 'うち利息 ' + Math.round(totalInterest / 10000).toLocaleString() + '万円';
+
+  if (state.usePair) {
+    document.getElementById('pb1loan').textContent = Math.round(loanMan * ratio1).toLocaleString() + '万円';
+    document.getElementById('pb2loan').textContent = Math.round(loanMan * ratio2).toLocaleString() + '万円';
+    document.getElementById('pb1monthly').textContent = Math.round(monthlyPay * ratio1).toLocaleString() + '円';
+    document.getElementById('pb2monthly').textContent = Math.round(monthlyPay * ratio2).toLocaleString() + '円';
+    document.getElementById('pb1total').textContent = Math.round(totalPay * ratio1 / 10000).toLocaleString() + '万円';
+    document.getElementById('pb2total').textContent = Math.round(totalPay * ratio2 / 10000).toLocaleString() + '万円';
+  }
+
+  const priceMan = val('price');
+  const priceYen = priceMan * 10000;
+  const reformMan = val('reform');
+
+  // 借入額自動スライド
+  if (state._booting) {
+    state._lastPrice = priceMan;
+  } else if (state._lastPrice !== priceMan) {
+    if (!state._loanManuallySet) {
+      const suggestedLoan = Math.round(priceMan * 1.085 / 10) * 10;
+      document.getElementById('loan').value = suggestedLoan;
+    }
+    state._lastPrice = priceMan;
+  }
+
+  // 諸費用計算
+  let chukai_calc = 0;
+  if (priceYen > 4_000_000) chukai_calc = (priceYen * 0.03 + 60_000) * 1.1;
+  else if (priceYen > 2_000_000) chukai_calc = (priceYen * 0.04 + 20_000) * 1.1;
+  else if (priceYen > 0) chukai_calc = priceYen * 0.05 * 1.1;
+
+  function baibaiInshi(yen) {
+    if (yen <= 0) return 0;
+    if (yen <= 5_000_000) return 1_000;
+    if (yen <= 10_000_000) return 5_000;
+    if (yen <= 50_000_000) return 10_000;
+    if (yen <= 100_000_000) return 30_000;
+    if (yen <= 500_000_000) return 60_000;
+    return 100_000;
+  }
+  const inshiBaibai_calc = baibaiInshi(priceYen);
+
+  function ukeoiInshi(yen) {
+    if (yen <= 0) return 0;
+    if (yen <= 2_000_000) return 200;
+    if (yen <= 3_000_000) return 500;
+    if (yen <= 5_000_000) return 1_000;
+    if (yen <= 10_000_000) return 5_000;
+    if (yen <= 50_000_000) return 10_000;
+    if (yen <= 100_000_000) return 30_000;
+    return 60_000;
+  }
+  const inshiUkeoi_calc = (state.propType === 'custom') ? ukeoiInshi(priceYen) : 0;
+
+  const bank_calc = loanYen * 0.022 * (state.usePair ? 1.03 : 1);
+  const fire_calc = state.propType === 'mansion' ? 80_000 : (priceYen > 50_000_000 ? 200_000 : 150_000);
+  const touki_calc = state.condition === 'new'
+    ? priceYen * 0.006 + loanYen * 0.001 + 150_000
+    : priceYen * 0.008 + loanYen * 0.001 + 150_000;
+  const hyouji_calc = (state.condition === 'new') ? 110_000 : 0;
+  const kikin_calc = (state.propType === 'mansion' && state.condition === 'new') ? 400_000 : 0;
+  const kanriSei_calc = val('kanri') > 0 ? val('kanri') : (state.propType === 'mansion' ? 15_000 : 0);
+  const shuzenSei_calc = val('shuzen') > 0 ? val('shuzen') : (state.propType === 'mansion' ? 10_000 : 0);
+  const kotei_calc = priceYen * 0.003;
+  const shutoku_calc = state.condition === 'used' ? priceYen * 0.01 : priceYen * 0.003;
+
+  function syncCost(id, v) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!el.dataset.edited) el.value = Math.round(v);
+  }
+  syncCost('ci_chukai', chukai_calc);
+  syncCost('ci_inshi1', inshiBaibai_calc);
+  syncCost('ci_inshi2', inshiUkeoi_calc);
+  syncCost('ci_bank', bank_calc);
+  syncCost('ci_fire', fire_calc);
+  syncCost('ci_touki', touki_calc);
+  syncCost('ci_hyouji', hyouji_calc);
+  syncCost('ci_kikin', kikin_calc);
+  syncCost('ci_kanri_sei', kanriSei_calc);
+  syncCost('ci_shuzen_sei', shuzenSei_calc);
+  syncCost('ci_kotei', kotei_calc);
+  syncCost('ci_furikomi', 5_500);
+  syncCost('ci_shutoku', shutoku_calc);
+  syncCost('ci_reform_yen', reformMan * 10_000);
+
+  function cVal(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+  const totalCost = cVal('ci_chukai') + cVal('ci_inshi1') + cVal('ci_inshi2')
+                  + cVal('ci_bank') + cVal('ci_fire') + cVal('ci_touki')
+                  + cVal('ci_hyouji') + cVal('ci_kikin') + cVal('ci_kanri_sei')
+                  + cVal('ci_shuzen_sei') + cVal('ci_kotei') + cVal('ci_furikomi');
+  const propTotal = priceMan + Math.round(totalCost / 10000) + Math.round(cVal('ci_reform_yen') / 10000);
+  const cashOut = Math.max(0, propTotal - loanMan);
+
+  document.getElementById('propTotal').textContent = propTotal.toLocaleString();
+  document.getElementById('cashOut').textContent = cashOut.toLocaleString();
+  document.getElementById('t_total').textContent = propTotal.toLocaleString();
+  document.getElementById('t_loan').textContent = loanMan.toLocaleString();
+  document.getElementById('t_cash').textContent = cashOut.toLocaleString();
+
+  const loanWarn = document.getElementById('loanWarning');
+  if (loanYen > capacity && capacity > 0) {
+    loanWarn.innerHTML = '<div class="warning danger">借入額が借入可能総額を超過</div>';
+  } else {
+    loanWarn.innerHTML = '';
+  }
+
+  if (!state._booting) autoSave();
+}
+
+function resetCostInputs() {
+  if (!confirm('諸費用をすべて自動計算値に戻しますか？')) return;
+  document.querySelectorAll('.cost-input').forEach(el => delete el.dataset.edited);
+  calc();
+}
+
+// AUTO SAVE
+let saveTimer = null;
+
+function getInputSnapshot() {
+  const snapshot = { _state: {
+    propType: state.propType,
+    condition: state.condition,
+    payRatio: state.payRatio,
+    splitMode: state.splitMode,
+    _loanManuallySet: state._loanManuallySet,
+  }, inputs: {}, costEdits: {} };
+  document.querySelectorAll('input[type="number"], input[type="text"], textarea').forEach(el => {
+    if (el.id) snapshot.inputs[el.id] = el.value;
+  });
+  snapshot.inputs.usePair = document.getElementById('usePair').checked;
+  document.querySelectorAll('.cost-input').forEach(el => {
+    if (el.dataset.edited) snapshot.costEdits[el.id] = true;
+  });
+  return snapshot;
+}
+
+function applySnapshot(snap) {
+  if (!snap) return;
+  state._booting = true;
+  Object.entries(snap.inputs || {}).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = v;
+  });
+  document.querySelectorAll('.cost-input').forEach(el => delete el.dataset.edited);
+  Object.keys(snap.costEdits || {}).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dataset.edited = '1';
+  });
+  if (snap._state) {
+    state.propType = snap._state.propType || 'house';
+    state.condition = snap._state.condition || 'new';
+    state.payRatio = snap._state.payRatio || 30;
+    state.splitMode = snap._state.splitMode || 'income';
+    state._loanManuallySet = !!snap._state._loanManuallySet;
+  }
+  setPropType(state.propType);
+  setCondition(state.condition);
+  setRatio(state.payRatio);
+  setSplit(state.splitMode);
+  togglePair();
+  state._booting = false;
+  calc();
+}
+
+function getAllRecords() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveAllRecords(records) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+  catch(e) { console.error(e); }
+}
+
+function showSaveIndicator() {
+  const el = document.getElementById('saveIndicator');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function autoSave() {
+  if (state._booting) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const snapshot = getInputSnapshot();
+    const custName = document.getElementById('custName').value.trim();
+
+    try { localStorage.setItem(CURRENT_KEY, JSON.stringify(snapshot)); } catch(e) {}
+
+    if (state.currentRecordId) {
+      const records = getAllRecords();
+      records[state.currentRecordId] = {
+        id: state.currentRecordId,
+        name: custName || '（無題）',
+        updatedAt: new Date().toISOString(),
+        snapshot: snapshot,
+      };
+      saveAllRecords(records);
+      refreshRecordSelect();
+    }
+    showSaveIndicator();
+  }, 400);
+}
+
+function saveAsNew() {
+  let custName = document.getElementById('custName').value.trim();
+  if (!custName) {
+    const input = prompt('顧客名を入力してください', '');
+    if (!input) return;
+    custName = input.trim();
+    document.getElementById('custName').value = custName;
+  }
+  const id = 'rec_' + Date.now();
+  state.currentRecordId = id;
+  const records = getAllRecords();
+  records[id] = {
+    id,
+    name: custName || '（無題）',
+    updatedAt: new Date().toISOString(),
+    snapshot: getInputSnapshot(),
+  };
+  saveAllRecords(records);
+  refreshRecordSelect();
+  document.getElementById('recordSelect').value = id;
+  showSaveIndicator();
+  alert(custName + ' として保存しました');
+}
+
+function switchRecord() {
+  const id = document.getElementById('recordSelect').value;
+  if (!id) {
+    if (!confirm('現在の内容を破棄して新規作成しますか？')) {
+      document.getElementById('recordSelect').value = state.currentRecordId || '';
+      return;
+    }
+    state.currentRecordId = null;
+    state._loanManuallySet = false;
+    resetAllFields();
+    calc();
+    return;
+  }
+  const records = getAllRecords();
+  const rec = records[id];
+  if (!rec) return;
+  state.currentRecordId = id;
+  applySnapshot(rec.snapshot);
+}
+
+function refreshRecordSelect() {
+  const records = getAllRecords();
+  const select = document.getElementById('recordSelect');
+  const current = state.currentRecordId;
+  select.innerHTML = '<option value="">— 新規作成 —</option>';
+  Object.values(records)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .forEach(rec => {
+      const opt = document.createElement('option');
+      opt.value = rec.id;
+      const date = new Date(rec.updatedAt);
+      opt.textContent = rec.name + ' (' + (date.getMonth()+1) + '/' + date.getDate() + ')';
+      select.appendChild(opt);
+    });
+  if (current) select.value = current;
+}
+
+function openRecords() {
+  const records = getAllRecords();
+  const list = document.getElementById('recordList');
+  const items = Object.values(records).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  if (items.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-mute);font-family:var(--jp-serif);font-size:13px;padding:20px;text-align:center;">まだ記録がありません<br>💾ボタンで新規保存</div>';
+  } else {
+    list.innerHTML = '';
+    items.forEach(rec => {
+      const div = document.createElement('div');
+      div.className = 'record-item';
+      const date = new Date(rec.updatedAt);
+      const dstr = date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate()
+                 + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+      const priceMan = rec.snapshot?.inputs?.price || '—';
+      div.innerHTML =
+        '<div class="record-info" onclick="loadRecord(\'' + rec.id + '\')">' +
+          '<div class="record-name">' + escapeHtml(rec.name) + '</div>' +
+          '<div class="record-meta">更新: ' + dstr + ' ／ 物件 ' + priceMan + '万円</div>' +
+        '</div>' +
+        '<button class="record-del" onclick="deleteRecord(\'' + rec.id + '\')" title="削除">🗑️</button>';
+      list.appendChild(div);
+    });
+  }
+  document.getElementById('recordsModal').classList.add('show');
+}
+
+function closeRecords() {
+  document.getElementById('recordsModal').classList.remove('show');
+}
+
+function loadRecord(id) {
+  const records = getAllRecords();
+  const rec = records[id];
+  if (!rec) return;
+  state.currentRecordId = id;
+  applySnapshot(rec.snapshot);
+  document.getElementById('recordSelect').value = id;
+  closeRecords();
+}
+
+function deleteRecord(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  const records = getAllRecords();
+  delete records[id];
+  saveAllRecords(records);
+  if (state.currentRecordId === id) state.currentRecordId = null;
+  refreshRecordSelect();
+  openRecords();
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function resetAllFields() {
+  const defaults = {
+    age1: 35, income1: 500, age2: 33, income2: 400,
+    years: 35, price: 4500, loan: 4883,
+    car1:0, card1:0, shop1:0, revo1:0, other1:0,
+    car2:0, card2:0, shop2:0, revo2:0, other2:0,
+    loan1:0, loan2:0, bonus:0, kanri:0, shuzen:0, parking:0, reform:0,
+    reviewRate: 3.0, realRate: 0.5,
+  };
+  Object.entries(defaults).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  document.querySelectorAll('.cost-input').forEach(el => delete el.dataset.edited);
+  document.getElementById('usePair').checked = false;
+  document.getElementById('custName').value = '';
+  document.getElementById('memo').value = '';
+  togglePair();
+  setPropType('house');
+  setCondition('new');
+  setRatio(30);
+  setSplit('income');
+}
+
+async function captureImage(ev) {
+  const btn = ev?.target;
+  const orig = btn?.textContent;
+  if (btn) { btn.textContent = '生成中…'; btn.disabled = true; }
+  try {
+    const canvas = await html2canvas(document.getElementById('captureTarget'), {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+    const custName = document.getElementById('custName').value.trim() || '資金計画';
+    const link = document.createElement('a');
+    link.download = custName + '_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('保存に失敗しました。スクリーンショットをお試しください');
+  }
+  if (btn) { btn.textContent = orig; btn.disabled = false; }
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loan').addEventListener('input', () => {
+    if (!state._booting) state._loanManuallySet = true;
+  });
+
+  try {
+    const saved = localStorage.getItem(CURRENT_KEY);
+    if (saved) {
+      const snap = JSON.parse(saved);
+      applySnapshot(snap);
+    }
+  } catch(e) {}
+
+  // URLパラメータで上書き (保存データより優先)
+  const params = new URLSearchParams(window.location.search);
+  const paramMap = {
+    price: 'price',
+    income: 'income1',
+    age: 'age1',
+    loan: 'loan'
+  };
+  
+  let paramOverridden = false;
+
+  for (const [key, id] of Object.entries(paramMap)) {
+    if (params.has(key)) {
+      const val = parseInt(params.get(key));
+      const el = document.getElementById(id);
+      if (!isNaN(val) && el) {
+        el.value = val;
+        paramOverridden = true;
+      }
+    }
+  }
+
+  if (paramOverridden) {
+    if (params.has('price') && !params.has('loan')) {
+      state._loanManuallySet = false;
+    } else if (params.has('loan')) {
+      state._loanManuallySet = true;
+    }
+  }
+
+  state._booting = false;
+  calc();
+
+  refreshRecordSelect();
+});
+</script>
+
+</body>
+</html>
